@@ -42,3 +42,4 @@
 - dart config:cache
 - dart route:cache
 - dart view:cache
+- autres optimisations
