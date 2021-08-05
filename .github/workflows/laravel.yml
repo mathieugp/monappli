@@ -17,6 +17,11 @@ jobs:
         php-version: '7.4'
     - uses: actions/checkout@v2
     - uses: symfonycorp/security-checker-action@v2
+      with:
+          disable-exit-code: 1
+      id: security-check
+    - name: Display the vulnerabilities as JSON
+      run: echo ${{ steps.security-check.outputs.vulns }}
     - name: Copy .env
       run: php -r "file_exists('.env') || copy('.env.example', '.env');"
     - name: Install Dependencies
