@@ -1,0 +1,86 @@
+version: "3.7"
+
+services:
+  appli:
+    build:
+      args:
+        user: mona
+        uid: 1000
+      context: ./
+      dockerfile: Dockerfile
+    image: mona
+    container_name: mona-appli
+    restart: unless-stopped
+    working_dir: /var/www/mona/
+    volumes:
+      - ./:/var/www/mona
+    networks:
+      - mona
+
+  db:
+    image: mysql:5.7
+    container_name: mona-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_USER: ${DB_USERNAME}
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+    volumes:
+      - ./docker-compose/mysql:/docker-entrypoint-initdb.d
+    networks:
+      - mona
+
+  nginx:
+    image: nginx:alpine
+    container_name: mona-nginx
+    restart: unless-stopped
+    ports:
+      - 8000:80
+    volumes:
+      - ./:/var/www/mona
+      - ./docker-compose/nginx:/etc/nginx/conf.d/
+    networks:
+      - mona
+  
+  composer:
+    image: composer:latest
+    container_name: composer
+    volumes:
+      - ./:/var/www/mona
+    working_dir: /var/www/mona
+    depends_on:
+      - appli
+    networks:
+      - mona
+
+  npm:
+    image: node:14
+    container_name: npm
+    volumes:
+      - ./:/var/www/mona
+    working_dir: /var/www/mona
+    entrypoint: ['npm']
+
+  artisan:
+    build:
+      args:
+        user: mona
+        uid: 1000
+      context: .
+      dockerfile: Dockerfile
+    container_name: artisan
+    volumes:
+      - ./:/var/www/mona
+    depends_on:
+      - db
+    working_dir: /var/www/mona
+    entrypoint: ['php', '/var/www/mona/artisan']
+    networks:
+      - mona
+
+networks:
+  mona:
+    driver: bridge
